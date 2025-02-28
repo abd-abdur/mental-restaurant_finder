@@ -1,0 +1,26 @@
+{
+  "name": "restaurant_finder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abd-abdur/restaurant-finder.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abd-abdur/restaurant-finder/issues"
+  },
+  "homepage": "https://github.com/abd-abdur/restaurant-finder#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "node-fetch": "^3.3.2"
+  }
+}
