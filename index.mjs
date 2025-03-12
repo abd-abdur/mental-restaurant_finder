@@ -137,7 +137,7 @@ app.get("/restaurants", async (req, res) => {
         return res.send("<h3>No high-rated restaurants found.</h3>");
     }
 
-    // Save to CSV in memory
+    // Generate CSV in memory
     const csvFields = ["title", "address", "rating", "reviews", "phone", "gps_coordinates"];
     const csvParser = new Parser({ fields: csvFields });
     const csvData = csvParser.parse(filteredRestaurants.map(r => ({
@@ -149,17 +149,13 @@ app.get("/restaurants", async (req, res) => {
         gps_coordinates: r.gps_coordinates ? `${r.gps_coordinates.latitude}, ${r.gps_coordinates.longitude}` : "No coordinates"
     })));
 
-    // Serve the CSV data directly as a downloadable file
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="restaurants.csv"');
-    res.send(csvData);
-
+    // Display results on the screen with a download link
     let resultHTML = `
         <html>
             <head><script src="https://cdn.tailwindcss.com"></script></head>
             <body class="bg-blue-600 text-white flex flex-col items-center py-10">
                 <h2 class="text-4xl font-bold">Top Restaurants in ${location}</h2>
-                <a href="/restaurants" class="bg-yellow-400 text-black px-6 py-2 rounded font-bold mt-4">Download CSV</a>
+                <a href="data:text/csv;charset=utf-8,${encodeURIComponent(csvData)}" download="restaurants.csv" class="bg-yellow-400 text-black px-6 py-2 rounded font-bold mt-4">Download CSV</a>
                 <ul class="bg-white text-black w-2/3 mt-6 p-6 rounded shadow-md">`;
 
     filteredRestaurants.forEach(restaurant => {
@@ -175,11 +171,6 @@ app.get("/restaurants", async (req, res) => {
     resultHTML += `</ul><br><a href="/" class="bg-yellow-400 text-black px-6 py-2 rounded font-bold">Back</a></body></html>`;
 
     res.send(resultHTML);
-});
-
-// Endpoint to download the CSV file (already served in the /restaurants endpoint above)
-app.get("/download", (req, res) => {
-    res.status(404).send("Download link is no longer used, the file is served directly now.");
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
