@@ -2,7 +2,6 @@ import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 import { Parser } from "json2csv";
-import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -22,13 +21,6 @@ const RESULTS_PER_PAGE = 20;
 
 // Serve static files if needed
 app.use(express.static(path.join(__dirname, "public")));
-
-// Helper function to inject Vercel Analytics
-function injectAnalytics() {
-  return `
-    <script src="https://cdn.vercel.com/analytics.js"></script>
-  `;
-}
 
 async function getRestaurants(location) {
     console.log(`Searching for restaurants in: ${location}`);
@@ -126,7 +118,6 @@ app.get("/", (req, res) => {
                     <input type="text" name="q" placeholder="Enter location" class="p-2 border rounded" required>
                     <button type="submit" class="ml-2 bg-blue-600 text-white p-2 rounded">Search</button>
                 </form>
-                ${injectAnalytics()}
             </body>
         </html>
     `);
@@ -146,8 +137,7 @@ app.get("/restaurants", async (req, res) => {
         return res.send("<h3>No high-rated restaurants found.</h3>");
     }
 
-    // Save to CSV
-    const csvFilePath = path.join(__dirname, "restaurants.csv");
+    // Save to CSV in memory
     const csvFields = ["title", "address", "rating", "reviews", "phone", "gps_coordinates"];
     const csvParser = new Parser({ fields: csvFields });
     const csvData = csvParser.parse(filteredRestaurants.map(r => ({
@@ -159,14 +149,17 @@ app.get("/restaurants", async (req, res) => {
         gps_coordinates: r.gps_coordinates ? `${r.gps_coordinates.latitude}, ${r.gps_coordinates.longitude}` : "No coordinates"
     })));
 
-    fs.writeFileSync(csvFilePath, csvData);
+    // Serve the CSV data directly as a downloadable file
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="restaurants.csv"');
+    res.send(csvData);
 
     let resultHTML = `
         <html>
             <head><script src="https://cdn.tailwindcss.com"></script></head>
             <body class="bg-blue-600 text-white flex flex-col items-center py-10">
                 <h2 class="text-4xl font-bold">Top Restaurants in ${location}</h2>
-                <a href="/download" class="bg-yellow-400 text-black px-6 py-2 rounded font-bold mt-4">Download CSV</a>
+                <a href="/restaurants" class="bg-yellow-400 text-black px-6 py-2 rounded font-bold mt-4">Download CSV</a>
                 <ul class="bg-white text-black w-2/3 mt-6 p-6 rounded shadow-md">`;
 
     filteredRestaurants.forEach(restaurant => {
@@ -184,15 +177,9 @@ app.get("/restaurants", async (req, res) => {
     res.send(resultHTML);
 });
 
-// Endpoint to download the CSV file
+// Endpoint to download the CSV file (already served in the /restaurants endpoint above)
 app.get("/download", (req, res) => {
-    const csvFilePath = path.join(__dirname, "restaurants.csv");
-    res.download(csvFilePath, "restaurants.csv", err => {
-        if (err) {
-            console.error("Error downloading file:", err);
-            res.status(500).send("Error downloading file.");
-        }
-    });
+    res.status(404).send("Download link is no longer used, the file is served directly now.");
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
