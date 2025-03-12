@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Setup environment variables
+// Load environment variables
 dotenv.config();
 
 // Convert ES module to use __dirname equivalent
@@ -14,11 +14,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.SERPAPI_KEY;
 const MIN_RATING = 4.0;
 const MIN_REVIEWS = 100;
 const RESULTS_PER_PAGE = 20;
+
+// Serve static files if needed
+app.use(express.static(path.join(__dirname, "public")));
 
 async function getRestaurants(location) {
     console.log(`Searching for restaurants in: ${location}`);
@@ -37,7 +40,7 @@ async function getRestaurants(location) {
 
         const restaurants = data.local_results || [];
         if (restaurants.length === 0) {
-            console.warn("No restaurants found in API response.");
+            console.warn("No restaurants found.");
             return { restaurants: [], ll: null };
         }
 
@@ -45,7 +48,7 @@ async function getRestaurants(location) {
 
         const firstRestaurant = restaurants[0];
         if (!firstRestaurant.gps_coordinates) {
-            console.warn("No GPS coordinates found for the first restaurant.");
+            console.warn("No GPS coordinates found.");
             return { restaurants, ll: null };
         }
 
@@ -107,6 +110,7 @@ app.get("/", (req, res) => {
         <html>
             <head>
                 <script src="https://cdn.tailwindcss.com"></script>
+                <title>Restaurant Finder</title>
             </head>
             <body class="bg-gray-100 text-center p-10">
                 <h1 class="text-3xl font-bold text-blue-600">Restaurant Finder</h1>
@@ -124,7 +128,7 @@ app.get("/", (req, res) => {
 app.get("/restaurants", async (req, res) => {
     const location = req.query.q;
     if (!location) {
-        return res.status(400).send("Missing 'q' parameter. Example: /restaurants?q=Saadiyat Island");
+        return res.status(400).send("Missing 'q' parameter. Example: /restaurants?q=New York");
     }
 
     const restaurants = await fetchAllRestaurants(location);
@@ -184,3 +188,4 @@ app.get("/download", (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
